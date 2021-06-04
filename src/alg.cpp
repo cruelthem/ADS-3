@@ -2,111 +2,84 @@
 #include <string>
 #include "tstack.h"
 
+int priority(char o) {
+  if (o == '(' || o == ')')
+    return 0;
+  else if (o == '+' || o == '-')
+    return 1;
+  else if (o == '*' || o == '/')
+    return 2;
+}
+
+
 std::string infx2pstfx(std::string inf) {
-  TStack<char> st1;
-  std::string hyp = "";
-  TStack<std::string> st2;
-  TStack<int> dst2;
-  int t[1000];
-  t['*'] = 2;
-  t['/'] = 2;
-  t['-'] = 1;
-  t['+'] = 1;
-  std::string a;
-  int coef = 0;
-  a = inf;
-  for (int i = 0; i < a.length(); i++) {
-    if (a[i] == '(') {
-      coef += 2;
-    } else if (a[i] == ')') {
-      coef -= 2;
-    } else if ((a[i] >= '0') && (a[i] <= '9')) {
-      std::string z = "";
-      do {
-        z += a[i];
-        i++;
-      } while ((i < a.length()) && ((a[i] >= '0') && (a[i] <= '9')));
-      i--;
-      st2.push(z);
-    } else if (st1.isEmpty()) {
-      st1.push(a[i]);
-      dst2.push(t[a[i]] + coef);
-    } else if (t[a[i]] + coef > dst2.get()) {
-      st1.push(a[i]);
-      dst2.push(t[a[i]] + coef);
-    } else {
-      bool er = true;
-      while ((!st1.isEmpty()) && (er == true)) {
-        if (dst2.get() >= t[a[i]] + coef) {
-          std::string b = "";
-          b += st1.get();
-          st2.push(b);
-          st1.pop();
-          dst2.pop();
-        } else {
-          er = false;
-        }
-      }
-      st1.push(a[i]);
-      dst2.push(t[a[i]] + coef);
-    }
-  }
-  while (!st1.isEmpty()) {
-    std::string b = "";
-    b += st1.get();
-    st2.push(b);
-    st1.pop();
-    dst2.pop();
-  }
-  while (!st2.isEmpty()) {
-    p += (st2.get()+' ');
-    st2.pop();
-  }
-  std::string s = "";
-  for (int i = 0; i < hyp.length(); i++)
-    if (!((i == 0) && (hyp[hyp.length() - 1] == ' ')))
-      s += hyp[hyp.length() - 1 - i];
-  return s;
+std::string result = "";
+TStack<char> op;
+for (int i = 0; i < inf.length(); i++) {
+if (inf[i] >= '0' && inf[i] <= '9') {
+if (!(inf[i-1] >= '0' && inf[i-1] <= '9') && result[result.length()-1] != ' ')
+result += ' ';
+result += inf[i];
+} else if (inf[i] == '(') {
+if (result != "" && result[result.length()-1] != ' ')
+result += ' ';
+op.push(inf[i]);
+} else if (inf[i] == ')') {
+while (op.get() != '(') {
+if (result[result.length()-1] != ' ')
+result += ' ';
+result += op.get();
+op.pop();
+}
+op.pop();
+} else if (inf[i] != ' ') {
+if (!op.isEmpty())
+while ((!op.isEmpty()) && priority(op.get()) >= priority(inf[i])) {
+result += ' ';
+result += op.get();
+op.pop();
+}
+op.push(inf[i]);
+}
+}
+while (!op.isEmpty()) {
+result += ' ';
+result += op.get();
+op.pop();
+}
+if (result[0] == ' ')
+result.erase(0, 1);
+return result;
 }
 
 int eval(std::string pst) {
-    TStack<int> x;
-  for (int i = 0; i < pst.length(); i++) {
-    if ((pst[i] >= '0') && (pst[i] <= '9')) {
-      std::string z = "";
-      do {
-        z += pst[i];
-        i++;
-      } while ((i < pst.length()) && ((pst[i] >= '0') && (pst[i] <= '9')));
-      i--;
-      x.push(stoi(z));
-    } else if (pst[i] == '+') {
-      int s = 0;
-      s += x.get();
-      x.pop();
-      s += x.get();
-      x.pop();
-      x.push(s);
-    } else if (pst[i] == '-') {
-      int s = -1 * x.get();
-      x.pop();
-      s += x.get();
-      x.pop();
-      x.push(s);
-    } else if (pst[i] == '*') {
-      int s = x.get();
-      x.pop();
-      s *= x.get();
-      x.pop();
-      x.push(s);
-    } else if (pst[i] == '/') {
-      int s = x.get();
-      x.pop();
-      int c = x.get();
-      x.pop();
-      x.push(c/s);
-    }
-  }
-  return x.get();
-  return 0;
+int result = 0, sp = 0, x = 0, y = 0;
+TStack<int> opns;
+if (pst[0] >= '0' && pst[0] <= '9')
+opns.push((int)pst[0] - 48);
+for (int i = 1; i < pst.length(); i++) {
+if (pst[i] >= '0' && pst[i] <= '9') {
+if (pst[i-1] >= '0' && pst[i-1] <= '9') {
+sp = opns.get() * 10 + (int) pst[i] - 48;
+opns.pop();
+opns.push(sp);
+} else
+opns.push((int)pst[i] - 48);
+} else if (pst[i] != ' ') {
+y = opns.get();
+opns.pop();
+x = opns.get();
+opns.pop();
+if (pst[i] == '+')
+opns.push(x + y);
+else if (pst[i] == '-')
+opns.push(x - y);
+else if (pst[i] == '*')
+opns.push(x * y);
+else if (pst[i] == '/')
+opns.push(x / y);
+}
+}
+result = opns.get();
+return result;
 }
